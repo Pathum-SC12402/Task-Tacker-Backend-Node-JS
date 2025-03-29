@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/UserModel.js');
-const {doHash,doHashValidation, hmacProcess} = require('../utilis/hashing.js');
+const {doHash,doHashValidation, hmacProcess} = require('../utilis/Hashing.js');
 const {signupSchema,signinSchema, acceptCodeSchema, changePasswordSchema, acceptFPCodeSchema} = require('../middlewares/Validator.js');
 const transport = require('../middlewares/SendMail.js');
 const { exist } = require('joi');
