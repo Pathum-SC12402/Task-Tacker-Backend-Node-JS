@@ -84,42 +84,70 @@ exports.deleteTask = async (req, res) => {
     }
 };
 
+// exports.deleteSubTask = async (req, res) => {
+//     try {
+//         const { subTaskId } = req.params; // Extract subTaskId from URL
+//         const { taskId } = req.body; // Extract taskId from request body
+
+//         console.log("Received taskId:", taskId);  // Log taskId being passed
+//         console.log("Received subTaskId:", subTaskId);  // Log subTaskId being passed
+
+//         // Find the task by taskId
+//         const task = await Task.findById(taskId);
+
+//         if (!task) {
+//             console.log("Task not found for taskId:", taskId);  // Log if task is not found
+//             return res.status(404).json({ message: "Task not found" });
+//         }
+
+//         console.log("Task found:", task); // Log the found task
+
+//         // Find the subtask by subTaskId and remove it
+//         const subtaskIndex = task.subtasks.findIndex(subtask => subtask._id.toString() === subTaskId);
+
+//         if (subtaskIndex === -1) {
+//             console.log("Subtask not found for subTaskId:", subTaskId);  // Log if subtask is not found
+//             return res.status(404).json({ message: "Subtask not found" });
+//         }
+
+//         // Remove the subtask from the task's subtasks array
+//         task.subtasks.splice(subtaskIndex, 1);
+//         await task.save();
+
+//         res.status(200).json({ message: "Subtask deleted successfully", task });
+//     } catch (error) {
+//         console.error("Error deleting subtask:", error);  // Log any unexpected errors
+//         res.status(500).json({ message: "Server error", error: error.message });
+//     }
+// };
+
 exports.deleteSubTask = async (req, res) => {
     try {
         const { subTaskId } = req.params; // Extract subTaskId from URL
-        const { taskId } = req.body; // Extract taskId from request body
 
-        console.log("Received taskId:", taskId);  // Log taskId being passed
-        console.log("Received subTaskId:", subTaskId);  // Log subTaskId being passed
+        console.log("Received subTaskId:", subTaskId); // Debugging
 
-        // Find the task by taskId
-        const task = await Task.findById(taskId);
+        // Find and delete the subtask directly
+        const deletedSubTask = await SubTask.findByIdAndDelete(subTaskId);
 
-        if (!task) {
-            console.log("Task not found for taskId:", taskId);  // Log if task is not found
-            return res.status(404).json({ message: "Task not found" });
-        }
-
-        console.log("Task found:", task); // Log the found task
-
-        // Find the subtask by subTaskId and remove it
-        const subtaskIndex = task.subtasks.findIndex(subtask => subtask._id.toString() === subTaskId);
-
-        if (subtaskIndex === -1) {
-            console.log("Subtask not found for subTaskId:", subTaskId);  // Log if subtask is not found
+        if (!deletedSubTask) {
+            console.log("Subtask not found for subTaskId:", subTaskId);
             return res.status(404).json({ message: "Subtask not found" });
         }
 
-        // Remove the subtask from the task's subtasks array
-        task.subtasks.splice(subtaskIndex, 1);
-        await task.save();
+        // Also remove reference from parent Task
+        await Task.updateOne(
+            { subtasks: subTaskId },
+            { $pull: { subtasks: subTaskId } }
+        );
 
-        res.status(200).json({ message: "Subtask deleted successfully", task });
+        res.status(200).json({ message: "Subtask deleted successfully" });
     } catch (error) {
-        console.error("Error deleting subtask:", error);  // Log any unexpected errors
+        console.error("Error deleting subtask:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 exports.getTodayPlans = async (req, res) => {
     try {

@@ -26,6 +26,8 @@ app.get('/',(req,res)=>{
     res.json({message:"Hello from the server"});
 })
 
-app.listen(process.env.PORT,()=>{
-    console.log('listening...');
-})
+// app.listen(process.env.PORT,()=>{
+//     console.log('listening...');
+// })
+
+module.exports = app; // Export the app for testing purposes
