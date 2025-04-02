@@ -45,6 +45,26 @@ exports.addTask = async (req, res) => {
     }
 };
 
+exports.addSubTask = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const { title, completed } = req.body;
+        const task = await Task.findById(taskId);
+        console.log("Received taskId:", taskId);  // Log taskId being passed
+        console.log("Task found:", task); // Log the found task
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+        const newSubTask = { title, completed };
+        task.subtasks.push(newSubTask);
+        await task.save();
+        res.status(201).json({ message: "Subtask added successfully", task });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
 exports.getAllTasks = async (req, res) => {
     try {
         const tasks = await Task.find();
@@ -84,70 +104,42 @@ exports.deleteTask = async (req, res) => {
     }
 };
 
-// exports.deleteSubTask = async (req, res) => {
-//     try {
-//         const { subTaskId } = req.params; // Extract subTaskId from URL
-//         const { taskId } = req.body; // Extract taskId from request body
-
-//         console.log("Received taskId:", taskId);  // Log taskId being passed
-//         console.log("Received subTaskId:", subTaskId);  // Log subTaskId being passed
-
-//         // Find the task by taskId
-//         const task = await Task.findById(taskId);
-
-//         if (!task) {
-//             console.log("Task not found for taskId:", taskId);  // Log if task is not found
-//             return res.status(404).json({ message: "Task not found" });
-//         }
-
-//         console.log("Task found:", task); // Log the found task
-
-//         // Find the subtask by subTaskId and remove it
-//         const subtaskIndex = task.subtasks.findIndex(subtask => subtask._id.toString() === subTaskId);
-
-//         if (subtaskIndex === -1) {
-//             console.log("Subtask not found for subTaskId:", subTaskId);  // Log if subtask is not found
-//             return res.status(404).json({ message: "Subtask not found" });
-//         }
-
-//         // Remove the subtask from the task's subtasks array
-//         task.subtasks.splice(subtaskIndex, 1);
-//         await task.save();
-
-//         res.status(200).json({ message: "Subtask deleted successfully", task });
-//     } catch (error) {
-//         console.error("Error deleting subtask:", error);  // Log any unexpected errors
-//         res.status(500).json({ message: "Server error", error: error.message });
-//     }
-// };
-
 exports.deleteSubTask = async (req, res) => {
     try {
         const { subTaskId } = req.params; // Extract subTaskId from URL
+        const { taskId } = req.body; // Extract taskId from request body
 
-        console.log("Received subTaskId:", subTaskId); // Debugging
+        console.log("Received taskId:", taskId);  // Log taskId being passed
+        console.log("Received subTaskId:", subTaskId);  // Log subTaskId being passed
 
-        // Find and delete the subtask directly
-        const deletedSubTask = await SubTask.findByIdAndDelete(subTaskId);
+        // Find the task by taskId
+        const task = await Task.findById(taskId);
 
-        if (!deletedSubTask) {
-            console.log("Subtask not found for subTaskId:", subTaskId);
+        if (!task) {
+            console.log("Task not found for taskId:", taskId);  // Log if task is not found
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        console.log("Task found:", task); // Log the found task
+
+        // Find the subtask by subTaskId and remove it
+        const subtaskIndex = task.subtasks.findIndex(subtask => subtask._id.toString() === subTaskId);
+
+        if (subtaskIndex === -1) {
+            console.log("Subtask not found for subTaskId:", subTaskId);  // Log if subtask is not found
             return res.status(404).json({ message: "Subtask not found" });
         }
 
-        // Also remove reference from parent Task
-        await Task.updateOne(
-            { subtasks: subTaskId },
-            { $pull: { subtasks: subTaskId } }
-        );
+        // Remove the subtask from the task's subtasks array
+        task.subtasks.splice(subtaskIndex, 1);
+        await task.save();
 
-        res.status(200).json({ message: "Subtask deleted successfully" });
+        res.status(200).json({ message: "Subtask deleted successfully", task });
     } catch (error) {
-        console.error("Error deleting subtask:", error);
+        console.error("Error deleting subtask:", error);  // Log any unexpected errors
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
-
 
 exports.getTodayPlans = async (req, res) => {
     try {
@@ -173,16 +165,12 @@ exports.getTodayPlans = async (req, res) => {
 
 exports.getPastPlans = async (req, res) => {
     try {
-        // Get the start of today (midnight)
         const startOfToday = moment().startOf('day').toISOString();
-        
-        // Extract the userId from the URL parameter
         const { userId } = req.params;
 
-        // Find all tasks for the specific user where the date is strictly before today
         const tasks = await Task.find({
             userId: userId,
-            date: { $lt: startOfToday } // Find tasks with a date strictly before today (midnight)
+            date: { $lt: startOfToday }
         });
 
         if (tasks.length === 0) {
@@ -214,6 +202,27 @@ exports.getFuturePlans = async (req, res) => {
         }
 
         res.status(200).json({ tasks });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+exports.updateTask = async (req, res) => {
+    try {
+        const { taskId } = req.params;
+        const { title, date } = req.body;
+
+        const task = await Task.findById(taskId);
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        if (title) task.title = title;
+        if (date) task.date = date;
+        task.updatedAt = new Date();
+
+        await task.save();
+        res.status(200).json({ message: "Task updated successfully", task });
     } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }

@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: task-tacker-backend
+    ports:
+      - "5000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb+srv://fernando12402:bbw8138@cluster0.xzcsl.mongodb.net/nodeAuth?retryWrites=true&w=majority&appName=Cluster0
+    depends_on:
+      - database
+
+  database:
+    image: mongo
+    container_name: mongo-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
