@@ -6,7 +6,7 @@ const transport = require('../middlewares/SendMail.js');
 const { exist } = require('joi');
 
 exports.signup = async (req, res) => {
-    const {email,password} = req.body;
+    const {name,email,password} = req.body;
     try{
         const {error,value} = await signupSchema.validate(req.body);
 
@@ -21,6 +21,7 @@ exports.signup = async (req, res) => {
 
         const hashedPassword = await doHash(password,12);
         const newUser = new User({
+            name,
             email,
             password:hashedPassword
         });

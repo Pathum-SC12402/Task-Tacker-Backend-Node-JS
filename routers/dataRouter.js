@@ -17,5 +17,6 @@ router.put('/update-SubTask/:subTaskId', dataController.updateSubTask);
 router.get('/get-taskQty/:userId', dataController.getTaskQty);
 router.get('/get-recentTasks/:userId', dataController.getRecentTasks);
 router.get('/get-subTasksQtyforThisWeek/:userId', dataController.getSubTasksQtyforThisWeek);
+router.get('/get-userDetails/:userId', dataController.getUserDetails);
 
 module.exports = router;

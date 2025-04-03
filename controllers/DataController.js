@@ -348,4 +348,24 @@ exports.getSubTasksQtyforThisWeek = async (req, res) => {
     }
 };
 
+exports.getUserDetails = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        //pass the name and email
+        const userDetails = {
+            name: user.name,
+            email: user.email
+        };
+        res.status(200).json( userDetails );
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 
