@@ -3,7 +3,6 @@ const User = require('../models/UserModel.js');
 const {doHash,doHashValidation, hmacProcess} = require('../utilis/Hashing.js');
 const {signupSchema,signinSchema, acceptCodeSchema, changePasswordSchema, acceptFPCodeSchema} = require('../middlewares/Validator.js');
 const transport = require('../middlewares/SendMail.js');
-const { exist } = require('joi');
 
 exports.signup = async (req, res) => {
     const {name,email,password} = req.body;
