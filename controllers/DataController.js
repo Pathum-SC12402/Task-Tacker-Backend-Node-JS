@@ -252,3 +252,100 @@ exports.updateSubTask = async (req, res) => {
     }
 };
 
+exports.getTaskQty = async (req, res) => {
+    try{
+        const { userId } = req.params; 
+
+        const tasks = await Task.find({ userId });
+        const totalTasks = tasks.length;
+        const completedTasks = tasks.reduce((count, task) => {
+            return count + task.subtasks.filter(subtask => subtask.completed).length;
+        }, 0);
+        const pendingTasks = totalTasks - completedTasks;
+        res.status(200).json({ totalTasks, completedTasks, pendingTasks });
+
+    }catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+exports.getRecentTasks = async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const startDate = moment().subtract(3, 'days').startOf('day');
+        const endDate = moment().add(2, 'days').endOf('day');
+
+        const recentTasks = await Task.find({
+            userId: userId,
+            date: { $gte: startDate.toDate(), $lte: endDate.toDate() }
+        });
+
+        // now pass the taskTitle, taskStatus(completed, In Progress and Pending), and taskDate to the frontend
+        const formattedTasks = recentTasks.map(task => {
+            if(task.subtasks.length > 0) {
+                const completedCount = task.subtasks.filter(subtask => subtask.completed).length;
+                const totalCount = task.subtasks.length;
+                let status = "Pending";
+                if (completedCount === totalCount) {
+                    status = "Completed";
+                } else if (completedCount > 0) {
+                    status = "In Progress";
+                }
+                return {
+                    taskTitle: task.title,
+                    taskStatus: status,
+                    taskDate: task.date.toISOString().split("T")[0]
+                };
+            }
+            return {
+                taskTitle: task.title,
+                taskStatus: "Pending",
+                taskDate: task.date.toISOString().split("T")[0]
+            };
+        })
+
+        res.status(200).json({ recentTasks:formattedTasks });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+exports.getSubTasksQtyforThisWeek = async (req, res) => {
+    try {
+        const { userId } = req.params; 
+
+        const startOfWeek = moment().startOf('week'); // Start of the week
+        const endOfWeek = moment().endOf('week'); // End of the week
+
+        // Find tasks that belong to the user and fall within this week
+        const tasks = await Task.find({
+            userId,
+            date: { $gte: startOfWeek, $lte: endOfWeek }
+        });
+
+        // Aggregate subtasks per day
+        const weekTaskData = tasks.reduce((acc, task) => {
+            const day = moment(task.date).format('ddd'); // Get short day name (Mon, Tue, etc.)
+            const count = task.subtasks.length;
+
+            // Check if the day already exists in the accumulator
+            const existingDay = acc.find(item => item.day === day);
+
+            if (existingDay) {
+                existingDay.count += count; // Sum up the counts
+            } else {
+                acc.push({ day, count });
+            }
+
+            return acc;
+        }, []);
+
+        res.status(200).json({ weekTaskData });
+
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
