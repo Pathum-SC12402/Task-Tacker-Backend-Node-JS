@@ -3,38 +3,80 @@ const User = require('../models/UserModel.js');
 const {doHash,doHashValidation, hmacProcess} = require('../utilis/Hashing.js');
 const {signupSchema,signinSchema, acceptCodeSchema, changePasswordSchema, acceptFPCodeSchema} = require('../middlewares/Validator.js');
 const transport = require('../middlewares/SendMail.js');
+const PendingVerification = require('../models/PendingVerification.js');
 
-exports.signup = async (req, res) => {
-    const {name,email,password} = req.body;
-    try{
-        const {error,value} = await signupSchema.validate(req.body);
+exports.verifyCodeAndSignup = async (req, res) => {
+    const { email, code } = req.body;
+    console.log(email, code);
+    try {
+        const userVerification = await PendingVerification.findOne({ email });
+        console.log(userVerification);
 
-        if(error){
-            return res.status(401).json({success:false,message:error.details[0].message});
-        }
-        const existingUser = await User.findOne({email});
-
-        if(existingUser){
-            return res.status(401).json({success:false,message:"User already exists"});
+        if (!userVerification) {
+            return res.status(400).json({ success: false, message: "No verification request found" });
         }
 
-        const hashedPassword = await doHash(password,12);
+        const hashedInputCode = hmacProcess(code, process.env.HMAC_VERIFICATION_CODE_SECRET);
+        if (hashedInputCode !== userVerification.code) {
+            return res.status(400).json({ success: false, message: "Invalid verification code" });
+        }
+
+        console.log('User password:', userVerification.password); // Debugging line
+        const hashedPassword = await doHash(userVerification.password, 12);
+
         const newUser = new User({
-            name,
-            email,
-            password:hashedPassword
+            name: userVerification.name,
+            email: userVerification.email,
+            password: hashedPassword
         });
-        const result = await newUser.save();
-        result.password = undefined;
 
-        res.status(201).json({
-            success:true,message:"Your account has been created successfully",data:result
-        });       
-    }catch(err){
-        console.log(err);
-        res.status(500).json({message:"Server Error"});
+        await newUser.save();
+
+        await PendingVerification.deleteOne({ email });
+
+        return res.status(201).json({ success: true, message: "Account created successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Server error" });
     }
-}
+};
+
+exports.sendVerificationCodeForNewUser = async (req, res) => {
+    const { email, name, password } = req.body;
+    try {
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: "User already exists" });
+        }
+
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedCode = hmacProcess(verificationCode, process.env.HMAC_VERIFICATION_CODE_SECRET);
+
+        await PendingVerification.updateOne(
+            { email },
+            {
+                name,
+                password,
+                code: hashedCode,
+                createdAt: Date.now()
+            },
+            { upsert: true }
+        );
+
+        // Send email
+        await transport.sendMail({
+            from: process.env.NODE_CODE_SENDING_EMAIL_ADDRESS,
+            to: email,
+            subject: "Email Verification Code",
+            html: `<h2>${verificationCode}</h2>`
+        });
+
+        return res.status(200).json({ success: true, message: "Verification code sent to email" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ success: false, message: "Failed to send code." });
+    }
+};
 
 exports.signin = async (req, res) => {
     const {email,password} = req.body;
