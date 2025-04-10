@@ -389,4 +389,44 @@ exports.updateUserDetails = async (req, res) => {
     }
 };
 
+exports.getUserRole = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId);
 
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ role: user.role });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+exports.getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select("-password -verificationCode -verificationCodeValidation -forgotPasswordCode -forgotPasswordCodeValidation -lastLogin");
+        if (users.length === 0) {
+            return res.status(404).json({ message: "No users found" });
+        }
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}
+
+exports.deleteUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log("Received userId:", userId);  // Log userId being passed
+        const deletedUser = await User.findByIdAndDelete(userId);
+
+        if (!deletedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({ message: "User deleted successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+}

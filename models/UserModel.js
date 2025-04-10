@@ -23,8 +23,13 @@ const UserSchema = mongoose.Schema({
         trim:true,
         select:false
     },
+    role:{
+        type:String,
+        required:true,
+        default:"user",
+    },
     verified:{
-        type:Boolean,
+        type:Boolean, 
         default:false
     },
     verificationCode:{
@@ -42,7 +47,10 @@ const UserSchema = mongoose.Schema({
     forgotPasswordCodeValidation:{
         type:Number,
         select:false
-    }
+    },
+    lastLogin:{
+        type:Date,
+    },
 },{
     timestamps:true
 })
