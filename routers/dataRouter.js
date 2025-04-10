@@ -3,8 +3,6 @@ const router = express.Router();
 const dataController = require('../controllers/DataController');
 
 router.get('/getUserId', dataController.getUserId);
-router.get('/getAllUsers', dataController.getAllUsers);
-router.delete('/delete-user/:userId', dataController.deleteUser);
 router.post('/create-task', dataController.addTask);
 router.post('/create-subTask/:taskId', dataController.addSubTask);
 router.get('/get-all-tasks', dataController.getAllTasks);
@@ -22,5 +20,9 @@ router.get('/get-subTasksQtyforThisWeek/:userId', dataController.getSubTasksQtyf
 router.get('/get-userDetails/:userId', dataController.getUserDetails);
 router.put('/update-userDetails/:userId', dataController.updateUserDetails);
 router.get('/get-userRole/:userId', dataController.getUserRole);
+router.get('/getAllUsers', dataController.getAllUsers);
+router.delete('/delete-user/:userId', dataController.deleteUser);
+router.get('/get-appUsage', dataController.getAppUsage);
+
 
 module.exports = router;

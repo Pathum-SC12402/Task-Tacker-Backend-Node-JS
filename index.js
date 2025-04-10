@@ -25,11 +25,5 @@ app.use('/api/data',dataRouter)
 app.get('/',(req,res)=>{
     res.json({message:"Hello from the server"});
 })
-// const port = process.env.PORT 
-// console.log("Loaded PORT:", port);
 
-// app.listen(port,()=>{
-//     console.log(`Server running on http://localhost:${port}`);
-// })
-
-module.exports = app; // Export the app for testing purposes
+module.exports = app;

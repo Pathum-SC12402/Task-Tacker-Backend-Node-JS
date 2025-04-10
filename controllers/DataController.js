@@ -405,15 +405,20 @@ exports.getUserRole = async (req, res) => {
 
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find({}).select("-password -verificationCode -verificationCodeValidation -forgotPasswordCode -forgotPasswordCodeValidation -lastLogin");
-        if (users.length === 0) {
-            return res.status(404).json({ message: "No users found" });
-        }
-        res.status(200).json(users);
+      const users = await User.find({ role: { $ne: "admin" } })  // exclude admin
+        .select("-password -verificationCode -verificationCodeValidation -forgotPasswordCode -forgotPasswordCodeValidation -lastLogin");
+  
+      if (users.length === 0) {
+        return res.status(404).json({ message: "No users found" });
+      }
+  
+      res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: "Server error", error: error.message });
+      res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
+  
 
 exports.deleteUser = async (req, res) => {
     try {
@@ -430,3 +435,45 @@ exports.deleteUser = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 }
+
+exports.getAppUsage = async (req, res) => {
+  try {
+    const allUsers = await User.find({});
+    const monthlyLogins = {};
+
+    // Get the last 6 months (including current)
+    const now = new Date();
+    const months = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleString("default", { month: "long" });
+      const year = date.getFullYear();
+      const key = `${monthName} ${year}`;
+      months.push(key);
+      monthlyLogins[key] = 0;
+    }
+
+    // Count users updated in those months
+    allUsers.forEach((user) => {
+      const updated = new Date(user.updatedAt);
+      const key = updated.toLocaleString("default", { month: "long" }) + " " + updated.getFullYear();
+
+      if (monthlyLogins.hasOwnProperty(key)) {
+        monthlyLogins[key]++;
+      }
+    });
+
+    // Format result
+    const result = months.map((month) => ({
+      month,
+      count: monthlyLogins[month]
+    }));
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error("Error in getAppUsage:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
