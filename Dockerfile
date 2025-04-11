@@ -1,15 +1,18 @@
 # Use official Node.js image
-FROM node:alpine
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy dependencies and install
+# Copy dependency files and install dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy source code
+# Copy the rest of the source code
 COPY . .
 
-# Start app
-CMD ["npm", "server.js"]
+# Expose the port your app uses (optional, useful for documentation and some tools)
+EXPOSE 8000
+
+# Start the app using npm script
+CMD ["npm", "start"]
