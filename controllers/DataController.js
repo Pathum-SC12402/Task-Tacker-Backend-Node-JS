@@ -253,18 +253,22 @@ exports.updateSubTask = async (req, res) => {
 };
 
 exports.getTaskQty = async (req, res) => {
-    try{
-        const { userId } = req.params; 
+    try {
+        const { userId } = req.params;
 
         const tasks = await Task.find({ userId });
         const totalTasks = tasks.length;
+
         const completedTasks = tasks.reduce((count, task) => {
-            return count + task.subtasks.filter(subtask => subtask.completed).length;
+            const allSubtasksCompleted = task.subtasks.length > 0 && task.subtasks.every(subtask => subtask.completed);
+            return count + (allSubtasksCompleted ? 1 : 0);
         }, 0);
+
         const pendingTasks = totalTasks - completedTasks;
+
         res.status(200).json({ totalTasks, completedTasks, pendingTasks });
 
-    }catch (error) {
+    } catch (error) {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };

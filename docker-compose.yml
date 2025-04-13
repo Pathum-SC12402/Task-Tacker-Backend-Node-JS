@@ -1,15 +1,11 @@
 services:
   app:
     build: .
-    container_name: node_app
+    container_name: task-tracker-backend
     ports:
-      - "8100:8100"
-    environment:
-      MONGO_URI: "mongodb+srv://fernando12402:bbw8138@cluster0.xzcsl.mongodb.net/nodeAuth?retryWrites=true&w=majority&appName=Cluster0"
-      TOKEN_SECRET: "secret"
-      NODE_CODE_SENDING_EMAIL_ADDRESS: "dilshanfernandopathum@gmail.com"
-      NODE_CODE_SENDING_EMAIL_PASSWORD: "wetkliyfruvopnci"
-      HMAC_VERIFICATION_CODE_SECRET: "secret"
+      - "8000:8000"
+    env_file:
+      - .env
     depends_on:
       - mongo
     volumes:
@@ -18,9 +14,9 @@ services:
 
   mongo:
     image: mongo:7
-    container_name: mongodb
+    container_name: task-tracker-mongodb
     ports:
-      - "28017:27017"
+      - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
